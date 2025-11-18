@@ -13,4 +13,5 @@ export interface AuthContextType {
   logout?: () => void;
   register?: (email: string, password: string, username?: string) => Promise<void>;
   loading?: boolean;
+  error:string | null;
 }

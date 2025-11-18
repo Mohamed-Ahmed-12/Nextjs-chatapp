@@ -24,7 +24,7 @@ interface PaginationData {
 }
 
 export default function ChatWindow({ roomid }: ChatWindowProps) {
-    const { username, uid } = useUserData();
+    const { username, uid, access } = useUserData();
     const [room, setRoom] = useState<any>({});
     const [messages, setMessages] = useState<MessageData[]>([]);
     const [message, setMessage] = useState("");
@@ -116,7 +116,7 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
     // --- WebSocket connection function ---
     const openWebSocket = () => {
         if (socketRef.current) return; // already connected
-        const wsUrl = `ws://localhost:8000/ws/chat/${roomid}/`;
+        const wsUrl = `ws://localhost:8000/ws/chat/${roomid}/?token=${access}`;
         const socket = new WebSocket(wsUrl);
         socketRef.current = socket;
 
@@ -160,6 +160,19 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
         chat.addEventListener("scroll", handleScroll);
         return () => chat.removeEventListener("scroll", handleScroll);
     }, [pagination.next, isLoadingOlder]);
+
+    /** WebSocket connection */
+    useEffect(() => {
+        openWebSocket();
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
+                socketRef.current = null;
+            }
+        };
+    }, [roomid, access]);
+
 
     return (
         <div className="h-dvh flex flex-col">
@@ -212,7 +225,6 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                    onFocus={openWebSocket}
                 />
                 <Button color="purple" type="submit">
                     <Send className="me-1" size={16} />
