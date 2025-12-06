@@ -1,9 +1,8 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { axiosInstance } from "../network";
+import { axiosInstance, setLogoutCallback } from "../network";
 import { AuthContextType, User } from "@/src/types/types";
-import { useUserData } from "@/src/hooks/useUser";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -16,45 +15,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const router = useRouter();
-  const pathname = usePathname();
 
-  const { username, uid, access, refresh } = useUserData();
+  // Load user from localStorage
+  const loadUserData = () => {
+    if (typeof window === "undefined") return;
 
-  useEffect(() => {
-    if (access && refresh && username && uid) {
-      setUser({ username, uid, refresh, access });
+    const user = localStorage.getItem("user");
+
+    if (user) {
+      setUser(JSON.parse(user));
       setIsAuthenticated(true);
     } else {
       setUser(null);
       setIsAuthenticated(false);
     }
-    setLoading(false);
-  }, [username, uid, access, refresh]);
+  };
 
-  useEffect(() => {
-    if (!isAuthenticated && !loading && pathname !== "/") {
-      router.push("/");
-    }
-  }, [isAuthenticated, loading, pathname, router]);
 
-  const login = async (username: string, password: string): Promise<User> => {
+  const signup = async (data: FormData): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axiosInstance.post("auth/login/", { username, password });
-      const { refresh, access, uid } = response.data;
+      const response = await axiosInstance.post("auth/signup/", data, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      })
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Signup failed");
+      throw new Error(err.response?.data?.detail || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem("access", access);
-        localStorage.setItem("refresh", refresh);
-        localStorage.setItem("uid", uid);
-        localStorage.setItem("username", username);
-      }
+  const login = async (data: User): Promise<User> => {
+    try {
+      setLoading(true);
+      setError(null);
 
-      setUser({ username, uid, refresh, access });
+      const response = await axiosInstance.post("auth/login/", data);
+      setUser(response.data);
+      localStorage.setItem("user", JSON.stringify(response.data));
       setIsAuthenticated(true);
-
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || "Login failed");
@@ -64,23 +69,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = (): void => {
+  const logout = React.useCallback((): void => {
     setUser(null);
+    localStorage.removeItem("user");
     setIsAuthenticated(false);
-    if (typeof window !== "undefined") {
-      localStorage.clear();
-    }
     router.push("/");
-  };
+  }, [router]);
 
-  const value: AuthContextType = {
+  useEffect(() => {
+    loadUserData();
+
+    // 1. Register the local logout function with the global interceptor
+    // This allows the interceptor in the 'network' file to call logout()
+    setLogoutCallback(logout);
+
+    const handleStorageChange = () => loadUserData();
+    window.addEventListener("storage", handleStorageChange);
+
+    setLoading(false);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      // clear the callback on unmount
+      setLogoutCallback(() => { });
+    };
+  }, [logout]);
+
+  const value: AuthContextType = React.useMemo(() => ({
     user,
     isAuthenticated,
     login,
     logout,
+    signup,
     loading,
     error,
-  };
+  }), [user, isAuthenticated, loading, error]);
 
   return (
     <AuthContext.Provider value={value}>

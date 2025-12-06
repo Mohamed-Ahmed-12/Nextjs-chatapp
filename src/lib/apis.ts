@@ -1,6 +1,6 @@
 import { axiosInstance } from "./network"
 
-export const fetchUserRooms = async (uid: string): Promise<any> => {
+export const fetchUserRooms = async (uid: number): Promise<any> => {
     try {
         const response = await axiosInstance.get(`user/${uid}/rooms/`)
         return response.data;
@@ -27,7 +27,7 @@ export const fetchRoomMessage = async (
     }
 }
 
-export const fetchUserProfile = async (uid: string): Promise<any> => {
+export const fetchUserProfile = async (uid: number): Promise<any> => {
     try {
         const res = await axiosInstance.get(`user/${uid}/profile/`)
         return res.data
@@ -37,16 +37,23 @@ export const fetchUserProfile = async (uid: string): Promise<any> => {
     }
 }
 
-export const UpdateUserProfile = async (uid: string, data: any): Promise<any> => {
+export const UpdateUserProfile = async (uid: number, data: any): Promise<any> => {
     try {
-        const res = await axiosInstance.put(`user/${uid}/profile/`, data)
+        const res = await axiosInstance.put(`user/${uid}/profile/`, data,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            }
+        )
         return res.data
     } catch (err) {
         console.log(err);
         throw err;
     }
 }
-export const changePassword = async (uid: string, oldPass: string, newPass: string): Promise<any> => {
+
+export const changePassword = async (uid: number, oldPass: string, newPass: string): Promise<any> => {
     const data = { "old_password": oldPass, "new_password": newPass }
     try {
         const res = await axiosInstance.put(`user/${uid}/changepassword/`, data)
@@ -63,6 +70,16 @@ export const fetchLanguages = async (): Promise<any> => {
         return res.data;
     } catch (err) {
         console.log(err);
+        throw err;
+    }
+}
+
+export const changeUserPivacy = async (data: any) => {
+    const { is_searchable } = data;
+    try {
+        await axiosInstance.post('user/privacy/', { is_searchable });
+    } catch (err) {
+        console.error("Failed to update privacy setting:", err);
         throw err;
     }
 }

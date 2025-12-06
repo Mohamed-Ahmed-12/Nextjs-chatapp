@@ -1,11 +1,10 @@
 "use client";
 
-import { useUserData } from "@/src/hooks/useUser";
 import { fetchUserRooms } from "@/src/lib/apis";
 import { useAuth } from "@/src/lib/context/auth";
 import { formatChatDate } from "@/src/lib/helpers";
 import { Avatar, Badge, Button, FloatingLabel, Sidebar, SidebarItemGroup, SidebarItems } from "flowbite-react";
-import { LogOut, Plus, UserRound } from "lucide-react";
+import { LogOut, MessageSquare, Plus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from 'react'
@@ -14,12 +13,12 @@ export function SideBarComp() {
     const pathname = usePathname();
     const [rooms, setRooms] = useState<[] | null>(null);
     const [isLoading, setLoading] = useState(false);
-    const { username, uid } = useUserData();
+    const { user } = useAuth();
     const {logout} = useAuth();
     useEffect(() => {
-        if (!uid) return;
+        if (!user?.uid) return;
         setLoading(true)
-        fetchUserRooms(uid)
+        fetchUserRooms(user?.uid)
             .then((data) => {
                 setRooms(data);
             })
@@ -30,14 +29,14 @@ export function SideBarComp() {
                 setLoading(false)
 
             })
-    }, [uid])
+    }, [user?.uid])
     return (
         <Sidebar className="w-full">
-            <SidebarItems className="mx-1 flex flex-col justify-between h-full">
+            <SidebarItems className="mx-1 flex flex-col justify-between h-full gap-y-10">
                 <div>
                     <SidebarItemGroup>
                         <li className="flex justify-between items-baseline">
-                            <span className="text-md">Chats ({rooms?.length})</span>
+                            <h5 className="text-md flex items-center gap-1.5"><MessageSquare size={'20'}/>Chats ({rooms?.length})</h5>
                             <Button color="alternative" size="xs" >
                                 <Plus size="14" /> New Chat
                             </Button>
@@ -67,7 +66,7 @@ export function SideBarComp() {
                                                         <span>
                                                             {room.last_message ? (
                                                                 <>
-                                                                    {room.last_message.sender == uid
+                                                                    {room.last_message.sender == user?.uid
                                                                         ? "You:"
                                                                         : `${room.last_message.sender_username}:`}{" "}
                                                                     {room.last_message.text.slice(0, 10)}
@@ -101,7 +100,7 @@ export function SideBarComp() {
                 <div>
                     <li className="flex justify-between text-indigo-800 text-sm">
                         <Link href={"/dashboard/profile"} className="flex gap-2 justify-center">
-                            <UserRound /> {username}
+                            <UserRound /> {user?.username}
                         </Link>
                         <button className="flex gap-2 justify-center cursor-pointer" onClick={logout}>
                             <LogOut /> Logout

@@ -1,49 +1,50 @@
 "use client"
 import { useAuth } from "@/src/lib/context/auth";
-import { Button, Checkbox, Label, TextInput } from "flowbite-react";
+import { Button, Checkbox, Label, Spinner, TextInput } from "flowbite-react";
 import { useFormik } from "formik";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
 export function Login() {
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
-    const { login, isAuthenticated } = useAuth();
+    const { login } = useAuth();
     const formik = useFormik({
         initialValues: {
             username: '',
             password: '',
         },
 
-        onSubmit: values => {
-            console.log(values)
-            const { username, password } = values;
-            if (login) {
-                login(username, password)
-                    .then(() => {
-                        router.push('/dashboard')
-                        toast.success("Welcome back")
-                    })
-                    .catch((err) => {
-                        toast.error(err?.response?.data?.detail)
-                    })
-            } else {
-                console.error('Login function is not available');
-                // You can show an error message to the user here
+        onSubmit: async (values) => {
+            try {
+                setIsSubmitting(true)
+                const { username, password } = values;
+                if (login) {
+                    login({ username, password })
+                        .then(() => {
+                            router.push('/dashboard')
+                            toast.success("Welcome back")
+                        })
+                        .catch((err) => {
+                            toast.error(err?.response?.data?.detail || "Login Failed")
+                        })
+                } else {
+                    console.error('Login function is not available');
+                    // You can show an error message to the user here
+                }
+            } catch (err: any) {
+                toast.error(err?.message || "Registration failed. Please try again.");
+            } finally {
+                setIsSubmitting(false)
             }
-
-        },
+        }
     });
-    useEffect(() => {
-        if (isAuthenticated)
-            router.push('/dashboard')
-    }, [isAuthenticated])
-
 
     return (
-        <div className="min-h-dvh bg-linear-to-br from-blue-50 to-indigo-300 dark:from-gray-900 dark:to-indigo-950">
+        <div className="min-h-dvh bg-linear-to-br to-blue-200 from-purple-100 dark:from-gray-900 dark:to-indigo-950">
             <div className="grid grid-cols-1 lg:grid-cols-2 min-h-dvh">
                 {/* Left Side - Login Form */}
                 <div className="flex flex-col justify-center items-center p-8">
@@ -129,8 +130,10 @@ export function Login() {
                                 type="submit"
                                 className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                                 size="lg"
+                                disabled={isSubmitting}
                             >
-                                Sign In
+                                {isSubmitting ? <Spinner size="md" /> : "Sign In"}
+
                             </Button>
                         </form>
 
@@ -139,7 +142,7 @@ export function Login() {
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                 Don't have an account?{" "}
                                 <Link
-                                    href="#"
+                                    href="/signup"
                                     className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400"
                                 >
                                     Sign up

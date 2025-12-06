@@ -33,7 +33,7 @@ export default function Message({
       {/* Message Bubble */}
       <div
         className={`max-w-[70%] p-3 rounded-2xl shadow-md text-sm ${isOwnMessage
-            ? "bg-indigo-600 text-white rounded-br-none"
+            ? "bg-indigo-400 text-white rounded-br-none"
             : "bg-gray-100 text-gray-900 rounded-bl-none"
           }`}
       >
@@ -42,10 +42,10 @@ export default function Message({
             {username}
           </p>
         )}
-        <p className="whitespace-pre-wrap">{text}</p>
+        <p className="whitespace-pre-wrap font-medium">{text}</p>
 
         <div
-          className={`text-[10px] mt-1 text-gray-400 ${isOwnMessage ? "text-right" : "text-left"}`}
+          className={`text-[10px] mt-1 ${isOwnMessage ? "text-right text-white" : "text-left text-gray-400"}`}
         >
           {formatChatDate(timestamp)}
         </div>

@@ -1,17 +1,21 @@
 
 export interface User {
-  access: string;
-  refresh: string;
-  uid:string;
-  username:string;
+  access?: string;
+  refresh?: string;
+  uid?: number;
+  username?: string;
+  first_name?:string;
+  last_name?:string;
+  email?:string;
+  password?:string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login?: (username: string, password: string) => Promise<User>;
+  login?: (data: User) => Promise<User>;
   logout?: () => void;
-  register?: (email: string, password: string, username?: string) => Promise<void>;
+  signup?: (data:FormData) => Promise<void>;
   loading?: boolean;
-  error:string | null;
+  error: string | null;
 }

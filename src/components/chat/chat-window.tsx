@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Button, TextInput } from "flowbite-react";
+import { Button, Card, TextInput } from "flowbite-react";
 import { Send } from "lucide-react";
 import Message from "./message";
-import { useUserData } from "@/src/hooks/useUser";
 import { fetchRoomMessage } from "@/src/lib/apis";
 import toast from "react-hot-toast";
 import ChatListSkelton from "./skelton";
+import { useAuth } from "@/src/lib/context/auth";
 
 interface ChatWindowProps {
     roomid: string;
@@ -24,7 +24,7 @@ interface PaginationData {
 }
 
 export default function ChatWindow({ roomid }: ChatWindowProps) {
-    const { username, uid, access } = useUserData();
+    const { user } = useAuth();
     const [room, setRoom] = useState<any>({});
     const [messages, setMessages] = useState<MessageData[]>([]);
     const [message, setMessage] = useState("");
@@ -103,8 +103,8 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
 
         const payload = {
             message: {
-                sender: Number(uid),
-                sender_username: username,
+                sender: Number(user?.uid),
+                sender_username: user?.username,
                 text: message,
                 created_at: new Date().toISOString(),
             },
@@ -116,7 +116,7 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
     // --- WebSocket connection function ---
     const openWebSocket = () => {
         if (socketRef.current) return; // already connected
-        const wsUrl = `ws://localhost:8000/ws/chat/${roomid}/?token=${access}`;
+        const wsUrl = `ws://127.0.0.1:8000/ws/chat/${roomid}/?token=${user?.access}`;
         const socket = new WebSocket(wsUrl);
         socketRef.current = socket;
 
@@ -171,13 +171,13 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
                 socketRef.current = null;
             }
         };
-    }, [roomid, access]);
+    }, [roomid, user?.access]);
 
 
     return (
-        <div className="h-dvh flex flex-col">
+        <Card className="h-dvh flex flex-col px-1">
             {/* Room header */}
-            <div className="bg-gray-100 p-4 border-b border-gray-200">
+            <div className="">
                 <h1 className="text-lg font-semibold">{room?.name}</h1>
             </div>
 
@@ -186,7 +186,7 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
                 <ChatListSkelton />
             ) : (
                 <div
-                    className="flex-1 overflow-y-auto p-4 space-y-4 bg-indigo-50"
+                    className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
                     ref={chatRef}
                 >
                     {isLoadingOlder && (
@@ -202,7 +202,7 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
                                 username={msg.sender_username ?? "Anonymous"}
                                 text={msg.text}
                                 timestamp={msg.created_at}
-                                isOwnMessage={msg.sender === Number(uid)}
+                                isOwnMessage={msg.sender === Number(user?.uid)}
                             />
                         ))
                     ) : (
@@ -216,7 +216,7 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
             {/* Input */}
             <form
                 onSubmit={sendMessage}
-                className="p-3 bg-gray-100 border-t border-gray-200 flex gap-2"
+                className="flex gap-2"
             >
                 <TextInput
                     type="text"
@@ -231,6 +231,6 @@ export default function ChatWindow({ roomid }: ChatWindowProps) {
                     Send
                 </Button>
             </form>
-        </div>
+        </Card>
     );
 }

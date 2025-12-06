@@ -1,10 +1,13 @@
-import { Login } from "../components/auth/login";
+import { Login } from "../components/auth/LoginForm";
+import PublicRoute from "../gaurds/PublicRoute";
 
 export default function Home() {
 
-  return(
+  return (
     <>
-    <Login />
+      <PublicRoute>
+        <Login />
+      </PublicRoute>
     </>
   )
 }
